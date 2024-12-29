@@ -11,6 +11,8 @@
     <OutputPath>.</OutputPath>
     <Name>ML_HS24_FakeNews</Name>
     <RootNamespace>ML_HS24_FakeNews</RootNamespace>
+    <InterpreterId>
+    </InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>

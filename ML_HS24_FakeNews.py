@@ -1,8 +1,13 @@
 
+import sys
+print("Aktiver Python-Interpeter: ", sys.executable)
+print("Python-Version: ", sys.version)
+
 import pandas as pd
 import re
 import nltk
 import numpy as np
+import os
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
@@ -16,7 +21,15 @@ stop_words = set(stopwords.words('english'))
 stop_words.discard('not')
 stop_words.discard('no')
 
+# setting up tqdm to see a progress bar while working (only for my own joy, please ignore)
 tqdm.pandas()
+
+# Base directory (actual folder of script)
+project_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Paths for files relative to project folder
+csv_file_path = os.path.join(project_dir, "WELFake_Dataset.csv")
+pkl_file_path = os.path.join(project_dir, "cleaned_welfake_dataset.pkl")
 
 # funktion for cleaning text
 def clean_text(text):
@@ -38,7 +51,7 @@ def clean_text(text):
         return ''
 
 #read original data file (csv)
-df = pd.read_csv("C:\\Users\\prhin\\source\\repos\\ML_Herbstsemester2024\\WELFake_Dataset.csv")
+df = pd.read_csv(csv_file_path)
 
 # print(df.columns)
 # print(df.head())
@@ -84,8 +97,8 @@ print(df[['text', 'hashtags', 'cleaned_text']].head())
 #Exemplary query from database (for my understanding):
 print("Exemplary query from database (showing first instance's hashtags):\n" + df['hashtags'].iloc[0])
 
-# save pandas dataframe as pickle file (binary format, quicker than csv)
-df.to_pickle('cleaned_welfake_dataset.pkl')
+# save pandas dataframe as pickle file (binary format, which is quicker than csv)
+df.to_pickle(pkl_file_path)
 print("File saved as pickle.")
 
 # Bereinigten DataFrame aus der Pickle-Datei laden
