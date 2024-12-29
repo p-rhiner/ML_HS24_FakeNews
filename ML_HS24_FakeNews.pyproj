@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>12123355-ab1c-4d76-a632-8a4c3cf99868</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>ML_HS24_FakeNews.py</StartupFile>
+    <StartupFile>MB_Naive-Bayes.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -23,7 +23,11 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ML_HS24_FakeNews.py" />
+    <Compile Include="GradientBoosting.py" />
+    <Compile Include="MB_Naive-Bayes.py" />
+    <Compile Include="Logistic_Regression.py" />
+    <Compile Include="RandomForest.py" />
+    <Compile Include="SVM.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />

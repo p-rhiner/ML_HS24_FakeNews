@@ -1,8 +1,3 @@
-
-import sys
-print("Aktiver Python-Interpeter: ", sys.executable)
-print("Python-Version: ", sys.version)
-
 import pandas as pd
 import re
 import nltk
@@ -11,7 +6,7 @@ import os
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 from tqdm import tqdm
 
@@ -53,16 +48,8 @@ def clean_text(text):
 #read original data file (csv)
 df = pd.read_csv(csv_file_path)
 
-# print(df.columns)
-# print(df.head())
-
-
 # Remove unnecessary columns ('Unnamed')
 df = df.drop('Unnamed: 0', axis=1)
-
-# # Has the column been removed successfully?
-# print(df.columns)
-# print(df.head())
 
 # show 'text' column 
 print("Showing column 'text' (for reference purpose): \n")
@@ -77,27 +64,16 @@ print(f"Label count: \n{df['label'].value_counts()}")
 # extract hashtags and saving to a new column:
 df['hashtags'] = df['text'].apply(lambda x: ' '.join([word for word in str(x).split() if word.startswith('#')]))
 
-
 # Saving text without hashtags
 df['text_without_hashtags'] = df['text'].apply(lambda x: ' '.join([word for word in x.split() if not word.startswith('#')]) if isinstance(x, str) else '')
-
-print("Printing df.head for reference purposes: \n")
-print(df.head)
-
 
 # executing function (executed after extracting hashtags to not lose hashtags in advance)
 df['cleaned_text'] = df['text_without_hashtags'].progress_apply(clean_text)
 
-print("Printing df.columns")
-print(df.columns)
-
 # Show columns 'text', 'hashtags' and 'cleaned_text' to check the results:
 print(df[['text', 'hashtags', 'cleaned_text']].head())
 
-#Exemplary query from database (for my understanding):
-print("Exemplary query from database (showing first instance's hashtags):\n" + df['hashtags'].iloc[0])
-
-# save pandas dataframe as pickle file (binary format, which is quicker than csv)
+# save pandas dataframe as pickle file (binary format, which is quicker to work with than csv)
 df.to_pickle(pkl_file_path)
 print("File saved as pickle.")
 
@@ -108,9 +84,7 @@ if not df.empty:
 else:
     print("Error: DataFrame is empty.")
 
-
-
-# Making sure the data file has been loaded correctly
+    # Making sure the data file has been loaded correctly
 print("df.columns after loading of file")
 print(df.columns)
 
@@ -127,7 +101,6 @@ X_hashtags = hashtag_vectorizer.fit_transform(df['hashtags']).toarray()
 # Combining of the two afore-mentioned TF-IDF Vectorizers in one:
 X = np.concatenate((X_cleaned_text, X_hashtags), axis=1)
 
-
 # Checking dimensions of created vectors
 print("Printing X.shape to check dimensions of created vectors: \n")
 print(X.shape)
@@ -142,7 +115,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 print(f"Training data: {X_train.shape}, Test data: {X_test.shape}")
 
 # Creating model and training
-model = MultinomialNB()
+model = LogisticRegression(max_iter=500)
 model.fit(X_train, y_train)
 
 # Output to confirm the model has been trained.
