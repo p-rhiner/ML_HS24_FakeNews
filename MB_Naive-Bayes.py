@@ -3,6 +3,8 @@ import sys
 print("Aktiver Python-Interpeter: ", sys.executable)
 print("Python-Version: ", sys.version)
 
+print("I am a Naive-Bayes.")
+
 import pandas as pd
 import re
 import nltk
