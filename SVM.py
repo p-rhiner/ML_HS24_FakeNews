@@ -1,133 +1,73 @@
-import pandas as pd
-import re
-import nltk
-import numpy as np
-import os
-from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report
-from tqdm import tqdm
+from sklearn.model_selection import train_test_split, GridSearchCV
+import json
+import os
+import pandas as pd
+import numpy as np
 
-#downloading of stop words which will later be removed from news articles except "not", since I thought it could be of help to the machine learning
-nltk.download('stopwords')
-stop_words = set(stopwords.words('english'))
-stop_words.discard('not')
-stop_words.discard('no')
+# Functions for saving/loading parameters
+def save_best_params(params, filename="best_params_svm.json"):
+    with open(filename, "w") as f:
+        json.dump(params, f)
+    print(f"Best parameters saved to {filename}.")
 
-# setting up tqdm to see a progress bar while working (only for my own joy, please ignore)
-tqdm.pandas()
-
-# Base directory (actual folder of script)
-project_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Paths for files relative to project folder
-csv_file_path = os.path.join(project_dir, "WELFake_Dataset.csv")
-pkl_file_path = os.path.join(project_dir, "cleaned_welfake_dataset.pkl")
-
-# funktion for cleaning text
-def clean_text(text):
-    if isinstance(text, str):
-        # Entfernen von URLs
-        text = re.sub(r'https?://\S+|www\.\S+', '', text)
-
-        # Entfernen von allen nicht-alphanumerischen Zeichen außer Leerzeichen
-        text = re.sub(r'[^a-zA-Z\s]', '', text)
-
-        # Alles in Kleinbuchstaben umwandeln
-        text = text.lower()
-
-        # Entfernen von Stoppwörtern
-        text = ' '.join([word for word in text.split() if word not in stop_words])
-
-        return text
+def load_best_params(filename="best_params_svm.json"):
+    if os.path.exists(filename):
+        with open(filename, "r") as f:
+            params = json.load(f)
+        print(f"Best parameters loaded from {filename}.")
+        return params
     else:
-        return ''
+        print(f"{filename} not found. Parameters will be tuned.")
+        return None
 
-#read original data file (csv)
-df = pd.read_csv(csv_file_path)
+# Main function for SVM with GridSearchCV
+def svm_model(X, y, use_saved_params=False, param_file="best_params_svm.json"):
+    # Load best parameters if requested
+    if use_saved_params:
+        best_params = load_best_params(param_file)
+        if best_params:
+            model = SVC(**best_params, random_state=42)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            return {
+                "model_name": "Support Vector Machine",
+                "accuracy": accuracy_score(y_test, y_pred),
+                "report": classification_report(y_test, y_pred, output_dict=True),
+                "best_params": best_params,
+            }
 
-# Remove unnecessary columns ('Unnamed')
-df = df.drop('Unnamed: 0', axis=1)
+    # Parameter Tuning with GridSearchCV
+    print("Starting parameter tuning using GridSearchCV...")
+    param_grid = {
+        "C": [0.1, 1, 10],  # Regularization parameter
+        "kernel": ["linear", "rbf"],  # Kernel type
+        "gamma": ["scale", "auto"],  # Kernel coefficient
+    }
+    model = SVC(random_state=42)
+    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, scoring="f1_macro", cv=3, verbose=2, n_jobs=-1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    grid_search.fit(X_train, y_train)
 
-# show 'text' column 
-print("Showing column 'text' (for reference purpose): \n")
-print(df['text'].head())
+    # Retrieve best parameters
+    best_params = grid_search.best_params_
+    print(f"Best parameters found: {best_params}")
 
-# making sure to save the text column as string
-df['text'] = df['text'].astype(str)
+    # Save best parameters
+    save_best_params(best_params, param_file)
 
-# show label count (fake = 1 /real = 0)
-print(f"Label count: \n{df['label'].value_counts()}")
+    # Train the model with best parameters
+    model = SVC(**best_params, random_state=42)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
 
-# extract hashtags and saving to a new column:
-df['hashtags'] = df['text'].apply(lambda x: ' '.join([word for word in str(x).split() if word.startswith('#')]))
+    # Return results
+    return {
+        "model_name": "Support Vector Machine",
+        "accuracy": accuracy_score(y_test, y_pred),
+        "report": classification_report(y_test, y_pred, output_dict=True),
+        "best_params": best_params,
+    }
 
-# Saving text without hashtags
-df['text_without_hashtags'] = df['text'].apply(lambda x: ' '.join([word for word in x.split() if not word.startswith('#')]) if isinstance(x, str) else '')
-
-# executing function (executed after extracting hashtags to not lose hashtags in advance)
-df['cleaned_text'] = df['text_without_hashtags'].progress_apply(clean_text)
-
-# Show columns 'text', 'hashtags' and 'cleaned_text' to check the results:
-print(df[['text', 'hashtags', 'cleaned_text']].head())
-
-# save pandas dataframe as pickle file (binary format, which is quicker to work with than csv)
-df.to_pickle(pkl_file_path)
-print("File saved as pickle.")
-
-# Bereinigten DataFrame aus der Pickle-Datei laden
-df = pd.read_pickle('cleaned_welfake_dataset.pkl')
-if not df.empty:
-    print("Pickle file loaded successfully.")
-else:
-    print("Error: DataFrame is empty.")
-
-    # Making sure the data file has been loaded correctly
-print("df.columns after loading of file")
-print(df.columns)
-
-# Creating and configuring TF-IDF Vectorizer 
-vectorizer = TfidfVectorizer(max_features=5000)
-
-# Transforming cleaned texts (cleaned_text) to numerical vectors
-X_cleaned_text = vectorizer.fit_transform(df['cleaned_text']).toarray()
-
-# Creating a second TF-IDF Vectorizer since I wanted to use them as a feature too
-hashtag_vectorizer = TfidfVectorizer(max_features=1000)
-X_hashtags = hashtag_vectorizer.fit_transform(df['hashtags']).toarray()
-
-# Combining of the two afore-mentioned TF-IDF Vectorizers in one:
-X = np.concatenate((X_cleaned_text, X_hashtags), axis=1)
-
-# Checking dimensions of created vectors
-print("Printing X.shape to check dimensions of created vectors: \n")
-print(X.shape)
-
-# Labels (fake/real)
-y = df['label']
-
-# Splitting data into training and test set (80% training, 20% testing)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Outputting size of trainings and test data set
-print(f"Training data: {X_train.shape}, Test data: {X_test.shape}")
-
-# Creating model and training
-model = LinearSVC()
-model.fit(X_train, y_train)
-
-# Output to confirm the model has been trained.
-print("Model successfully trained.")
-
-# Forecast on test data
-y_pred = model.predict(X_test)
-
-# Evaluating model performance
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Model accuracy: {accuracy:.2f}")
-
-# Output of classification report (Precision, Recall, F1-Score)
-print("Classification report:\n")
-print(classification_report(y_test, y_pred))

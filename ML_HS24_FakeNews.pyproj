@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>12123355-ab1c-4d76-a632-8a4c3cf99868</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>GradientBoosting.py</StartupFile>
+    <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -23,12 +23,17 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="GradientBoosting.py" />
-    <Compile Include="MB_Naive-Bayes.py" />
-    <Compile Include="Logistic_Regression.py" />
-    <Compile Include="module1.py" />
-    <Compile Include="RandomForest.py" />
-    <Compile Include="SVM.py" />
+    <Compile Include="logistic_regression.py" />
+    <Compile Include="old_GradientBoosting.py" />
+    <Compile Include="gradient_boosting.py" />
+    <Compile Include="main.py" />
+    <Compile Include="old_MN_Naive-Bayes.py" />
+    <Compile Include="old_Logistic_Regression.py" />
+    <Compile Include="multinomial_naive_bayes.py" />
+    <Compile Include="old_RandomForest.py" />
+    <Compile Include="old_SVM.py" />
+    <Compile Include="random_forest.py" />
+    <Compile Include="svm.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
